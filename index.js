@@ -46,9 +46,8 @@ const tryParams = x =>{
     if((params.size || params.size?.())&&[...params.entries()].flat().every(Boolean)){
       return Object.fromEntries([...params.entries()]);
     }
-  }catch{
-    return x;
-  }
+  }catch{}
+  return x;
 };
 
 const cap = x =>{
@@ -112,7 +111,7 @@ const tryBase64 = x =>{
     }
   }catch{}
   return x;
-};Number.isInteger('')
+};
 
 
 const trim = x => String(x).trim();
