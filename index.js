@@ -57,7 +57,7 @@ const cap = x =>{
 }
 
 const isObject = x => typeof x === 'object' && x !== null;
-const unquote = x => String(x).replace(/^[\s'"`“”‘’:\\]+|[\s'"`“”‘’:\\]+$/g,'');
+const unquote = x => String(x).replace(/^[\s'"`“”‘’:\\\[\{\()}]]+|[\s'"`“”‘’:\\\)\}\]]+$/g,'');
 
 
 function namespaceHeaders(headers) {
