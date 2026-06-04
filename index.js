@@ -1,3 +1,4 @@
+let deep = false;
 const fetchResponse = async (...args) => {
     try {
         return await fetch(...args);
@@ -51,8 +52,8 @@ const tryParams = x =>{
 };
 
 const cap = x =>{
-  const head = String(x.match(/^[^a-zA-Z]*[a-zA-Z]/)?.[0] ?? x?.[0]);
-  return head.toUpperCase()+x.replace(head,'').toLowerCase();
+  const head = String(String(x)?.match?.(/^[^a-zA-Z]*[a-zA-Z]/)?.[0] ?? x?.[0]);
+  return head.toUpperCase()+String(x).replace(head,'').toLowerCase();
 }
 
 const isObject = x => typeof x === 'object' && x !== null;
@@ -62,9 +63,9 @@ const unquote = x => String(x).replace(/^[\s'"`“”‘’:\\]+|[\s'"`“”‘
 function namespaceHeaders(headers) {
   if(Array.isArray(headers) || !isObject(headers))return headers;
   const result = {};
-
+  const delim = deep ?/[-_ +\.\/:=,;]+/:/[-_ +]+/;
   for (const [key, value] of Object.entries(headers)) {
-    const parts = key.toLowerCase().split(/[-_ ]+/).map(unquote).filter(Boolean);
+    const parts = key.toLowerCase().split(delim).map(unquote).filter(Boolean);
    
     if (parts.length === 1) {
       result[cap(parts[0])] = value;
@@ -86,7 +87,8 @@ function namespaceHeaders(headers) {
 function namespaceValue(str) {
   if(typeof str !== 'string')return str;
 const result = {};
-  const parts = str.toLowerCase().split(/[-_ \/]+/).map(unquote).filter(Boolean);
+const delim = deep ? /[-_ \/+;:=,\.]+/ : /[-_ \/+;:]+/;
+  const parts = str.toLowerCase().split(delim).map(unquote).filter(Boolean);
   if (parts.length === 1) {
     return str;
   }
@@ -136,7 +138,7 @@ function struct(value,key){
           }
         }
       }
-      const seperators = ['=',':',/[:=]/];
+      const seperators = deep ? ['=',':',/[:=]/,'.','/','-','+','_'] : ['=',':',/[:=]/];
       if(Array.isArray(value)){
         if(/content-security-policy/i.test(key)){
           if(value?.every?.(isPolicyKV)){
@@ -268,9 +270,11 @@ function structureHeaders(headers){
 
 export default {
   async fetch(request, env, ctx) {
+    try{
     const reqURL = new URL(request.url);
     let headers = request.headers;
     const url = reqURL.searchParams.get('url');
+    deep = String(reqURL.searchParams.get('deep')) === 'true';
     if(url){
       const res = await fetchResponse(url);
       headers = res.headers
@@ -279,5 +283,9 @@ export default {
     const headObj = structureHeaders(headers);
 
     return new Response(JSON.stringify(headObj,null,2));
+  }catch(e){
+    console.warn(e);
+    return new Response(String(e),{status:500,statusText:String(e)})
+  }
   }
 };
